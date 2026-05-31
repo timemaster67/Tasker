@@ -33,12 +33,13 @@
         --card: #0f1418;
         --text: #eef3f7;
         --snooze-bg: #2ecc71;
-        --snooze-text: #051014;
+        --snooze-text: white;
         --primary-bg: #1e90ff;
-        --primary-text: #051022;
+        --primary-text: white;
         --muted: rgba(238,243,247,0.7);
         --shadow: none;
       }
+      .target-time{ color:rgba(255,255,255,0.80); }
     }
 
     html,body{
@@ -153,13 +154,24 @@
     }
 
     .grid button{
-      height: var(--btn-height);
+      height: auto;
+      min-height: var(--btn-height);
       font-size:18px;
       border-radius:12px;
       background:var(--primary-bg);
       color:var(--primary-text);
       margin-top: 20px;
       margin-bottom: 20px;
+      flex-direction: column;
+      padding: 10px 12px;
+    }
+
+    .target-time{
+      display:block;
+      font-size:16px;
+      font-weight:700;
+      color:rgba(255,255,255,0.80);
+      margin-top:2px;
     }
 
     /* A little card to contain content so there's padding from edges */
@@ -232,11 +244,11 @@
           </div>
 
           <div class="grid">
-            <button class="btn" data-action="30">30 min</button>
-            <button class="btn" data-action="60">60 min</button>
-            <button class="btn" data-action="90">1h 30min</button>
-            <button class="btn" data-action="120">2h</button>
-            <button class="btn" data-action="160">2h 30min</button>
+            <button class="btn" data-action="report" data-time="30">30 min<span class="target-time"></span></button>
+            <button class="btn" data-action="report" data-time="60">60 min<span class="target-time"></span></button>
+            <button class="btn" data-action="report" data-time="90">1h 30min<span class="target-time"></span></button>
+            <button class="btn" data-action="report" data-time="120">2h<span class="target-time"></span></button>
+            <button class="btn" data-action="report" data-time="150">2h 30min<span class="target-time"></span></button>
             <button class="btn" data-action="dismiss">Dismiss</button>
           </div>
         </section>
@@ -266,13 +278,48 @@
         if(navigator.vibrate) navigator.vibrate(40);
       }
 
+      // Format target time as HH:MM
+      function formatTargetTime(minutesAhead){
+        const target = new Date(Date.now() + minutesAhead * 60000);
+        const h = String(target.getHours()).padStart(2, '0');
+        const m = String(target.getMinutes()).padStart(2, '0');
+        return h + ':' + m;
+      }
+
+      // Populate target time spans on all report buttons
+      function populateTargetTimes(){
+        document.querySelectorAll('[data-action="report"]').forEach(btn => {
+          const mins = parseInt(btn.getAttribute('data-time'), 10);
+          const span = btn.querySelector('.target-time');
+          if(span && !isNaN(mins)) span.textContent = formatTargetTime(mins);
+        });
+      }
+
+      // Get only the direct text content of a button (ignoring child spans)
+      function getButtonLabel(el){
+        let text = '';
+        el.childNodes.forEach(n => { if(n.nodeType === 3) text += n.textContent; });
+        return text.trim();
+      }
+
       // Handler
       function onBtnClick(e){
-        const label = e.currentTarget.getAttribute('data-action') || e.currentTarget.textContent.trim();
-        const human = label === 'snooze' || label === 'Snooze' ? 'Snoozed' : label;
-        showToast(human.toString().replace(/^\w/, c => c.toUpperCase()));
+        const el = e.currentTarget;
+        const action = el.getAttribute('data-action') || el.textContent.trim();
         doVibrate();
-        console.log('button clicked:', label);
+
+        if(action === 'report'){
+          const mins = parseInt(el.getAttribute('data-time'), 10);
+          const target = formatTargetTime(mins);
+          const span = el.querySelector('.target-time');
+          if(span) span.textContent = target;
+          showToast(getButtonLabel(el));
+          console.log('button clicked: report, target:', target);
+        } else {
+          const human = action === 'snooze' || action === 'Snooze' ? 'Snoozed' : action;
+          showToast(human.toString().replace(/^\w/, c => c.toUpperCase()));
+          console.log('button clicked:', action);
+        }
       }
 
       // Attach handlers
@@ -295,6 +342,7 @@
       window.addEventListener('resize', updateOverlay);
 
       attach();
+      populateTargetTimes();
       updateOverlay();
 
       // Accessibility: allow keyboard activation
