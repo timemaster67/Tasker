@@ -158,6 +158,8 @@
       border-radius:12px;
       background:var(--primary-bg);
       color:var(--primary-text);
+      margin-top: 20px;
+      margin-bottom: 20px;
     }
 
     /* A little card to contain content so there's padding from edges */
@@ -230,11 +232,11 @@
           </div>
 
           <div class="grid">
-            <button class="btn" data-action="10">10 min</button>
-            <button class="btn" data-action="20">20 min</button>
             <button class="btn" data-action="30">30 min</button>
             <button class="btn" data-action="60">60 min</button>
-            <button class="btn" data-action="tomorrow">Until Tomorrow</button>
+            <button class="btn" data-action="90">1h 30min</button>
+            <button class="btn" data-action="120">2h</button>
+            <button class="btn" data-action="160">2h 30min</button>
             <button class="btn" data-action="dismiss">Dismiss</button>
           </div>
         </section>
@@ -264,25 +266,8 @@
         if(navigator.vibrate) navigator.vibrate(40);
       }
 
-      // Ripple effect
-      function rippleEffect(e){
-        const btn = e.currentTarget;
-        const rect = btn.getBoundingClientRect();
-        const r = document.createElement('span');
-        r.className = 'ripple';
-        const size = Math.max(rect.width, rect.height) * 0.6;
-        r.style.width = r.style.height = size + 'px';
-        const x = e.clientX - rect.left - size/2;
-        const y = e.clientY - rect.top - size/2;
-        r.style.left = x + 'px';
-        r.style.top = y + 'px';
-        btn.appendChild(r);
-        setTimeout(()=> r.remove(), 600);
-      }
-
       // Handler
       function onBtnClick(e){
-        rippleEffect(e);
         const label = e.currentTarget.getAttribute('data-action') || e.currentTarget.textContent.trim();
         const human = label === 'snooze' || label === 'Snooze' ? 'Snoozed' : label;
         showToast(human.toString().replace(/^\w/, c => c.toUpperCase()));
