@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Snooze — Mobile</title>
+  <style>
+    :root{
+      --safe-padding: 16px;
+      --gap: 12px;
+      --btn-height: 64px;
+      --snooze-height: 20vh;
+      --radius: 14px;
+      --shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+
+    /* Light theme defaults */
+    :root{
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #0b1220;
+      --snooze-bg: #1db954; /* green */
+      --snooze-text: #ffffff;
+      --primary-bg: #007bff; /* blue */
+      --primary-text: #ffffff;
+      --muted: rgba(11,18,32,0.6);
+    }
+
+    /* Dark theme overrides */
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg: #0b0f13;
+        --card: #0f1418;
+        --text: #eef3f7;
+        --snooze-bg: #2ecc71;
+        --snooze-text: #051014;
+        --primary-bg: #1e90ff;
+        --primary-text: #051022;
+        --muted: rgba(238,243,247,0.7);
+        --shadow: none;
+      }
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg, var(--bg), var(--bg));
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app{
+      min-height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: calc(var(--safe-padding) * 1.2);
+      box-sizing:border-box;
+    }
+
+    .shell{
+      width:100%;
+      max-width:720px;
+      background:transparent;
+    }
+
+    main.card{
+      display:flex;
+      flex-direction:column;
+      gap:var(--gap);
+    }
+
+    header.topbar{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 0 4px 0;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .content{
+      display:flex;
+      flex-direction:column;
+      gap:var(--gap);
+    }
+
+    .snooze-wrap{
+      width:100%;
+      display:flex;
+    }
+
+    button.btn{
+      -webkit-appearance:none;
+      appearance:none;
+      border:0;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:0 18px;
+      height:var(--btn-height);
+      font-size:20px;
+      font-weight:600;
+      color:var(--primary-text);
+      background:var(--primary-bg);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      transition:transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+      position:relative;
+      overflow:hidden;
+      user-select:none;
+      touch-action:manipulation;
+    }
+
+    button.btn:active{ transform:translateY(1px) scale(.997); }
+    button.btn:focus{ outline:3px solid rgba(0,0,0,0.08); outline-offset:2px; }
+    .btn.ripple-effect span.ripple{
+      position:absolute;
+      border-radius:50%;
+      transform:scale(0);
+      animation:ripple .6s linear;
+      background:rgba(255,255,255,0.35);
+      pointer-events:none;
+    }
+    @keyframes ripple{ to{ transform:scale(8); opacity:0; } }
+
+    /* Snooze button larger and green */
+    #snoozeBtn{
+      width:100%;
+      height:calc(var(--btn-height) + 12vh);
+      min-height:72px;
+      max-height:160px;
+      font-size:22px;
+      background:var(--snooze-bg);
+      color:var(--snooze-text);
+      border-radius:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    /* Secondary buttons grid */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:var(--gap);
+    }
+
+    .grid button{
+      height: var(--btn-height);
+      font-size:18px;
+      border-radius:12px;
+      background:var(--primary-bg);
+      color:var(--primary-text);
+    }
+
+    /* A little card to contain content so there's padding from edges */
+    .panel{
+      background:var(--card);
+      padding:calc(var(--safe-padding));
+      border-radius:20px;
+      box-shadow:var(--shadow);
+    }
+
+    /* Toast */
+    #toast{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:24px;
+      background:rgba(0,0,0,0.8);
+      color:#fff;
+      padding:10px 14px;
+      border-radius:999px;
+      font-size:14px;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .25s ease, transform .25s ease;
+      z-index:60;
+    }
+    #toast.show{ opacity:1; transform:translateX(-50%) translateY(-6px); }
+
+    /* Landscape overlay */
+    .landscape-overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.6);
+      color:#fff;
+      z-index:1000;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:24px;
+    }
+    .landscape-overlay .box{
+      max-width:420px;
+      background:rgba(255,255,255,0.04);
+      padding:18px;
+      border-radius:14px;
+      backdrop-filter: blur(6px) saturate(120%);
+    }
+
+    @media (orientation: landscape){
+      .landscape-overlay{ display:flex; }
+    }
+
+    /* Mobile tweaks */
+    @media (max-width:420px){
+      :root{ --safe-padding:12px; --btn-height:64px; }
+      #snoozeBtn{ height:calc(var(--btn-height) + 16vh); font-size:20px; }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="shell">
+      <main class="card panel" role="main">
+        <header class="topbar">Appuyez pour snoozer</header>
+        <section class="content">
+          <div class="snooze-wrap">
+            <button id="snoozeBtn" class="btn" aria-label="Snooze" data-action="snooze">Snooze</button>
+          </div>
+
+          <div class="grid">
+            <button class="btn" data-action="10">10 min</button>
+            <button class="btn" data-action="20">20 min</button>
+            <button class="btn" data-action="30">30 min</button>
+            <button class="btn" data-action="60">60 min</button>
+            <button class="btn" data-action="tomorrow">Until Tomorrow</button>
+            <button class="btn" data-action="dismiss">Dismiss</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <div class="landscape-overlay" id="landscapeOverlay" aria-hidden="true">
+    <div class="box">
+      <h2 style="margin:0 0 8px 0;">Portrait recommandé</h2>
+      <p style="margin:0">Cette interface est optimisée pour une utilisation en orientation verticale. Merci de tourner votre appareil.</p>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const toast = document.getElementById('toast');
+      function showToast(msg, ms=1600){
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(()=> toast.classList.remove('show'), ms);
+      }
+
+      function doVibrate(){
+        if(navigator.vibrate) navigator.vibrate(40);
+      }
+
+      // Ripple effect
+      function rippleEffect(e){
+        const btn = e.currentTarget;
+        const rect = btn.getBoundingClientRect();
+        const r = document.createElement('span');
+        r.className = 'ripple';
+        const size = Math.max(rect.width, rect.height) * 0.6;
+        r.style.width = r.style.height = size + 'px';
+        const x = e.clientX - rect.left - size/2;
+        const y = e.clientY - rect.top - size/2;
+        r.style.left = x + 'px';
+        r.style.top = y + 'px';
+        btn.appendChild(r);
+        setTimeout(()=> r.remove(), 600);
+      }
+
+      // Handler
+      function onBtnClick(e){
+        rippleEffect(e);
+        const label = e.currentTarget.getAttribute('data-action') || e.currentTarget.textContent.trim();
+        const human = label === 'snooze' || label === 'Snooze' ? 'Snoozed' : label;
+        showToast(human.toString().replace(/^\w/, c => c.toUpperCase()));
+        doVibrate();
+        console.log('button clicked:', label);
+      }
+
+      // Attach handlers
+      function attach(){
+        const snooze = document.getElementById('snoozeBtn');
+        snooze.addEventListener('click', onBtnClick, {passive:false});
+        const others = document.querySelectorAll('.grid .btn');
+        others.forEach(b => b.addEventListener('click', onBtnClick, {passive:false}));
+      }
+
+      // Orientation overlay fallback for browsers that don't support media query updates
+      function updateOverlay(){
+        const overlay = document.getElementById('landscapeOverlay');
+        const isLandscape = window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
+        overlay.setAttribute('aria-hidden', !isLandscape);
+        overlay.style.display = isLandscape ? 'flex' : 'none';
+      }
+
+      window.addEventListener('orientationchange', updateOverlay);
+      window.addEventListener('resize', updateOverlay);
+
+      attach();
+      updateOverlay();
+
+      // Accessibility: allow keyboard activation
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){
+          const active = document.activeElement;
+          if(active && active.classList && active.classList.contains('btn')){
+            active.click();
+            e.preventDefault();
+          }
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>

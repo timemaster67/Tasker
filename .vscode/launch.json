@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Snooze App",
+      "type": "pwa-node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server.js",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "Listening on http://localhost:8000/",
+        "uriFormat": "http://localhost:8000/",
+        "action": "openExternally"
+      }
+    },
+    {
+      "name": "Serve Snooze App in Integrated Browser",
+      "type": "editor-browser",
+      "request": "launch",
+      "url": "http://localhost:8000/snooze.html",
+      "preLaunchTask": "Serve Snooze App"
+    }
+  ]
+}
