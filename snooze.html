@@ -326,11 +326,15 @@
       }
 
       function triggerAlarmChanged(arg1, arg2){
+        let result='';
         if(typeof tk !== 'undefined' && typeof tk.performTask === 'function'){
-          tk.performTask('SnoozeAlarmChanged', 0, arg1, arg2);
+          result=tk.performTask('SnoozeAlarmChanged', 0, arg1, arg2);
         } else if(typeof performTask === 'function'){
-          performTask('SnoozeAlarmChanged', 0, arg1, arg2);
+          result=performTask('SnoozeAlarmChanged', 0, arg1, arg2);
+        } else {
+          result=-1;
         }
+        showToast('performTask result: ' + result);
       }
 
       // Get only the direct text content of a button (ignoring child spans)
@@ -353,7 +357,7 @@
           if(span) span.textContent = target;
           setAlarmVariables(mins, target);
           triggerAlarmChanged('report');
-          showToast(getButtonLabel(el));
+          // showToast(getButtonLabel(el));
           console.log('button clicked: report, target:', target);
         } else {
           if(action === 'snooze' || action === 'dismiss'){
