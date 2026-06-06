@@ -460,8 +460,26 @@
 
       function triggerAlarmChanged(arg1, arg2){
         logger.debug('Triggering SnoozeAlarmChanged task with args:', arg1, arg2);
-        const result = Tasker.performTask('SnoozeAlarmChanged', 0, '', '');
+        
+        try{
+          const result = Tasker.performTask('SnoozeAlarmChanged', 0, '', '');
+        }catch(e){
+          logger.error('Error performing task:', e);
+          return;
+        }
+        
+
+        if(typeof performTask === 'function'){
+          performTask('SnoozeAlarmChanged', 0, '', '');
+        }
+        if(tk && typeof tk.performTask === 'function'){
+          tk.performTask('SnoozeAlarmChanged', 0, '', '');
+        }
+
         logger.info('performTask result:', result);
+      }
+       function triggerAlarmChanged(){
+        
       }
 
       // Get only the direct text content of a button (ignoring child spans)
