@@ -317,8 +317,31 @@
   <script>
     (function(){
       const toast = document.getElementById('toast');
-      const debugEnabled = new URLSearchParams(window.location.search).get('debug') === '1';
       const debugConsole = document.getElementById('debugConsole');
+
+      function getRawQueryString(){
+        if(window.location.search && window.location.search.length > 0){
+          return window.location.search;
+        }
+        const href = window.location.href || '';
+        const queryIndex = href.indexOf('?');
+        if(queryIndex >= 0){
+          const query = href.slice(queryIndex);
+          const hashIndex = query.indexOf('#');
+          return hashIndex >= 0 ? query.slice(0, hashIndex) : query;
+        }
+        if(window.location.hash && window.location.hash.startsWith('#?')){
+          return window.location.hash.slice(1);
+        }
+        return '';
+      }
+
+      function getQueryParam(name){
+        const params = new URLSearchParams(getRawQueryString());
+        return params.get(name) ?? '';
+      }
+
+      const debugEnabled = getQueryParam('debug') === '1';
 
       function formatTimestamp(){
         const now = new Date();
@@ -484,11 +507,6 @@
         if(snooze) snooze.addEventListener('click', onBtnClick, {passive:false});
         const others = document.querySelectorAll('.grid .btn');
         others.forEach(b => b.addEventListener('click', onBtnClick, {passive:false}));
-      }
-
-      function getQueryParam(name){
-        const params = new URLSearchParams(window.location.search);
-        return params.get(name) ?? '';
       }
 
       function onStopClick(){
