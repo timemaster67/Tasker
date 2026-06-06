@@ -377,6 +377,11 @@
           if(typeof self !== 'undefined' && self && typeof self[name] === 'function'){
             return self[name];
           }
+          // Try accessing directly from global scope
+          const global = (typeof globalThis !== 'undefined') ? globalThis : (typeof window !== 'undefined') ? window : (typeof self !== 'undefined') ? self : {};
+          if(typeof global[name] === 'function'){
+            return global[name];
+          }
           return null;
         }
 
