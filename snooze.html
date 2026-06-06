@@ -325,6 +325,7 @@
       }
 
       const debugEnabled = getQueryParam('debug') === '1';
+      const version=getQueryParam('ver');
 
       function formatTimestamp(){
         const now = new Date();
@@ -407,7 +408,8 @@
       function initDebugConsole(){
         if(!debugEnabled || !debugConsole) return;
         debugConsole.classList.add('active');
-        appendLog('info', 'Debug mode enabled', window.location.href);
+        logger.info('Debug mode enabled', window.location.href);
+        logger.info('App version:', version);
       }
 
       function showToast(msg, ms=1600){
