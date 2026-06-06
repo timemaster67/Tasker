@@ -455,7 +455,7 @@
 
       function triggerAlarmChanged(arg1, arg2){
         logger.debug('Triggering SnoozeAlarmChanged task with args:', arg1, arg2);
-        const result = Tasker.performTask('SnoozeAlarmChanged', 0, arg1, arg2);
+        const result = Tasker.performTask('SnoozeAlarmChanged', 0, '', '');
         logger.info('performTask result:', result);
       }
 
