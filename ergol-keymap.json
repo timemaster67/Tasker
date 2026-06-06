@@ -1,3 +1,5 @@
+// Defines the keyboard layout used in VS Code in the browser environment.
+// Open VS Code and run "Developer: Inspect Key Mappings (JSON)" from Command Palette.
 {
   "layout": {
 		"model": "pc105",
