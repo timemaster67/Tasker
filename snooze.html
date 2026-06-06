@@ -26,6 +26,38 @@
       --muted: rgba(11,18,32,0.6);
     }
 
+    #debugConsole{
+      display:none;
+      position:fixed;
+      inset:0 auto auto 0;
+      z-index:1200;
+      width:100%;
+      max-height:240px;
+      overflow:hidden;
+      padding:14px 16px 12px;
+      box-sizing:border-box;
+      background:rgba(15,18,22,0.92);
+      color:#eef3f7;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:13px;
+      line-height:1.4;
+      box-shadow:0 16px 40px rgba(0,0,0,0.28);
+    }
+    #debugConsole.active{ display:block; }
+    #debugConsole .debug-title{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; font-size:13px; font-weight:700; }
+    #debugConsole .debug-title span{opacity:.78;}
+    #debugConsole .debug-log{ max-height:186px; overflow-y:auto; padding-right:6px; }
+    #debugConsole .debug-entry{ margin-bottom:6px; white-space:pre-wrap; word-break:break-word; }
+    #debugConsole .debug-entry span{ display:inline-block; vertical-align:top; }
+    #debugConsole .debug-entry .timestamp{ opacity:.72; margin-right:8px; min-width:120px; }
+    #debugConsole .debug-entry .level{ text-transform:uppercase; font-weight:700; margin-right:8px; min-width:58px; }
+    #debugConsole .debug-entry .caller{ opacity:.72; margin-right:8px; }
+    #debugConsole .debug-entry .message{}
+    #debugConsole .debug-entry .level.debug{ color:#9fd4ff; }
+    #debugConsole .debug-entry .level.info{ color:#7bffae; }
+    #debugConsole .debug-entry .level.warn{ color:#ffd86a; }
+    #debugConsole .debug-entry .level.error{ color:#ff6c6c; }
+
     /* Dark theme overrides */
     @media (prefers-color-scheme: dark){
       :root{
@@ -251,6 +283,13 @@
   </style>
 </head>
 <body>
+  <div id="debugConsole" role="log" aria-live="polite" aria-label="Debug log">
+    <div class="debug-title">
+      <span>Debug console</span>
+      <span>enabled via debug=1</span>
+    </div>
+    <div class="debug-log"></div>
+  </div>
   <div class="app">
     <div class="shell">
       <main class="card panel" role="main">
@@ -278,11 +317,99 @@
   <script>
     (function(){
       const toast = document.getElementById('toast');
+      const debugEnabled = new URLSearchParams(window.location.search).get('debug') === '1';
+      const debugConsole = document.getElementById('debugConsole');
+
+      function formatTimestamp(){
+        const now = new Date();
+        return now.toISOString().replace('T', ' ').replace('Z', '');
+      }
+
+      function getCallerInfo(){
+        const err = new Error();
+        if(!err.stack) return 'unknown';
+        const frames = err.stack.split('\n').slice(1).map(line => line.trim()).filter(Boolean);
+        const caller = frames.find(line => !/logger\.|appendLog|getCallerInfo/.test(line)) || frames[0] || 'unknown';
+        return caller.replace(/^at\s+/, '');
+      }
+
+      function appendLog(level, ...args){
+        if(!debugEnabled || !debugConsole) return;
+        const logRoot = debugConsole.querySelector('.debug-log');
+        if(!logRoot) return;
+        const message = args.map(arg => {
+          if(typeof arg === 'string') return arg;
+          try { return JSON.stringify(arg); } catch (e) { return String(arg); }
+        }).join(' ');
+        const entry = document.createElement('div');
+        entry.className = 'debug-entry';
+        entry.innerHTML =
+          '<span class="timestamp">[' + formatTimestamp() + ']</span>' +
+          '<span class="level ' + level + '">' + level + '</span>' +
+          '<span class="caller">' + getCallerInfo() + '</span>' +
+          '<span class="message">' + message + '</span>';
+        logRoot.appendChild(entry);
+        logRoot.scrollTop = logRoot.scrollHeight;
+      }
+
+      const logger = {
+        debug: (...args) => appendLog('debug', ...args),
+        info: (...args) => appendLog('info', ...args),
+        warn: (...args) => appendLog('warn', ...args),
+        error: (...args) => appendLog('error', ...args)
+      };
+
+      const Tasker = (() => {
+        function getHostMethod(name){
+          if(typeof tk !== 'undefined' && tk && typeof tk[name] === 'function'){
+            return tk[name].bind(tk);
+          }
+          if(typeof window !== 'undefined' && window && typeof window[name] === 'function'){
+            return window[name];
+          }
+          if(typeof self !== 'undefined' && self && typeof self[name] === 'function'){
+            return self[name];
+          }
+          return null;
+        }
+
+        function unavailable(name){
+          const message = `Tasker API unavailable: ${name}`;
+          logger.error(message);
+          throw new Error(message);
+        }
+
+        return {
+          performTask(taskName, priority, parameterOne, parameterTwo){
+            const fn = getHostMethod('performTask');
+            if(!fn) return unavailable('performTask');
+            return fn(taskName, priority, parameterOne, parameterTwo);
+          },
+          setGlobal(varName, newValue){
+            const fn = getHostMethod('setGlobal');
+            if(!fn) return unavailable('setGlobal');
+            return fn(varName, newValue);
+          },
+          flash(message){
+            const fn = getHostMethod('flash');
+            if(!fn) return unavailable('flash');
+            return fn(message);
+          }
+        };
+      })();
+
+      function initDebugConsole(){
+        if(!debugEnabled || !debugConsole) return;
+        debugConsole.classList.add('active');
+        appendLog('info', 'Debug mode enabled', window.location.href);
+      }
+
       function showToast(msg, ms=1600){
         toast.textContent = msg;
         toast.classList.add('show');
         setTimeout(()=> toast.classList.remove('show'), ms);
-        taskerFlash(msg);
+        Tasker.flash(msg);
+        logger.debug('showToast', msg);
       }
 
       function doVibrate(){
@@ -305,45 +432,19 @@
           if(span && !isNaN(mins)) span.textContent = formatTargetTime(mins);
         });
       }
-      function taskerFlash(msg){
-        if(typeof tk !== 'undefined' && typeof tk.flash === 'function'){
-          tk.flash(msg);
-        } 
-        else if(typeof flash === 'function'){
-          flash(msg);
-        } 
-      }
-
       function setAlarmVariables(minutes, targetTime){
-        if(typeof tk !== 'undefined' && typeof tk.setGlobal === 'function'){
-          tk.setGlobal('SnoozeAlarmMin', String(minutes));
-          tk.setGlobal('SnoozeAlarmTime', targetTime);
-        } else if(typeof setGlobal === 'function'){
-          setGlobal('SnoozeAlarmMin', String(minutes));
-          setGlobal('SnoozeAlarmTime', targetTime);
-        }
+        Tasker.setGlobal('SnoozeAlarmMin', String(minutes));
+        Tasker.setGlobal('SnoozeAlarmTime', targetTime);
       }
 
       function clearAlarmVariables(){
-        if(typeof tk !== 'undefined' && typeof tk.setGlobal === 'function'){
-          tk.setGlobal('SnoozeAlarmMin', '');
-          tk.setGlobal('SnoozeAlarmTime', '');
-        } else if (typeof setGlobal === 'function'){
-          setGlobal('SnoozeAlarmMin', '');
-          setGlobal('SnoozeAlarmTime', ''); 
-        }
+        Tasker.setGlobal('SnoozeAlarmMin', '');
+        Tasker.setGlobal('SnoozeAlarmTime', '');
       }
 
       function triggerAlarmChanged(arg1, arg2){
-        let result='';
-        if(typeof tk !== 'undefined' && typeof tk.performTask === 'function'){
-          result=tk.performTask('SnoozeAlarmChanged', 0, arg1, arg2);
-        } else if(typeof performTask === 'function'){
-          result=performTask('SnoozeAlarmChanged', 0, arg1, arg2);
-        } else {
-          result=-1;
-        }
-        showToast('performTask result: ' + result);
+        const result = Tasker.performTask('SnoozeAlarmChanged', 0, arg1, arg2);
+        logger.info('performTask result:', result);
       }
 
       // Get only the direct text content of a button (ignoring child spans)
@@ -366,15 +467,14 @@
           if(span) span.textContent = target;
           setAlarmVariables(mins, target);
           triggerAlarmChanged('report');
-          // showToast(getButtonLabel(el));
-          console.log('button clicked: report, target:', target);
+          logger.debug('button clicked: report, target:', target);
         } else {
           if(action === 'snooze' || action === 'dismiss'){
             triggerAlarmChanged(action);
           }
           const human = action === 'snooze' || action === 'Snooze' ? 'Snoozed' : action;
           showToast(human.toString().replace(/^\w/, c => c.toUpperCase()));
-          console.log('button clicked:', action);
+          logger.debug('button clicked:', action);
         }
       }
 
@@ -395,7 +495,7 @@
         doVibrate();
         triggerAlarmChanged('stop');
         showToast('Arrêté');
-        console.log('button clicked: stop');
+        logger.debug('button clicked: stop');
       }
 
       function initSecondAlarmMode(){
@@ -423,6 +523,7 @@
         initSecondAlarmMode();
       }
 
+      initDebugConsole();
       attach();
       populateTargetTimes();
 
