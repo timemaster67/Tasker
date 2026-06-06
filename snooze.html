@@ -295,6 +295,26 @@
         });
       }
 
+      function setAlarmVariables(minutes, targetTime){
+        if(typeof setLocal === 'function'){
+          setLocal('alarmMin', String(minutes));
+          setLocal('alarmTime', targetTime);
+        }
+      }
+
+      function clearAlarmVariables(){
+        if(typeof setLocal === 'function'){
+          setLocal('alarmMin', '');
+          setLocal('alarmTime', '');
+        }
+      }
+
+      function triggerAlarmChanged(){
+        if(typeof performTask === 'function'){
+          performTask('alarmChanged', 0, '', '');
+        }
+      }
+
       // Get only the direct text content of a button (ignoring child spans)
       function getButtonLabel(el){
         let text = '';
@@ -313,9 +333,15 @@
           const target = formatTargetTime(mins);
           const span = el.querySelector('.target-time');
           if(span) span.textContent = target;
+          setAlarmVariables(mins, target);
+          triggerAlarmChanged();
           showToast(getButtonLabel(el));
           console.log('button clicked: report, target:', target);
         } else {
+          if(action === 'snooze' || action === 'dismiss'){
+            clearAlarmVariables();
+            triggerAlarmChanged();
+          }
           const human = action === 'snooze' || action === 'Snooze' ? 'Snoozed' : action;
           showToast(human.toString().replace(/^\w/, c => c.toUpperCase()));
           console.log('button clicked:', action);
@@ -325,7 +351,7 @@
       // Attach handlers
       function attach(){
         const snooze = document.getElementById('snoozeBtn');
-        snooze.addEventListener('click', onBtnClick, {passive:false});
+        if(snooze) snooze.addEventListener('click', onBtnClick, {passive:false});
         const others = document.querySelectorAll('.grid .btn');
         others.forEach(b => b.addEventListener('click', onBtnClick, {passive:false}));
       }
