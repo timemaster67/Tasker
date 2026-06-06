@@ -282,6 +282,7 @@
         toast.textContent = msg;
         toast.classList.add('show');
         setTimeout(()=> toast.classList.remove('show'), ms);
+        taskerFlash(msg);
       }
 
       function doVibrate(){
@@ -303,6 +304,14 @@
           const span = btn.querySelector('.target-time');
           if(span && !isNaN(mins)) span.textContent = formatTargetTime(mins);
         });
+      }
+      function taskerFlash(msg){
+        if(typeof tk !== 'undefined' && typeof tk.flash === 'function'){
+          tk.flash(msg);
+        } 
+        else if(typeof flash === 'function'){
+          flash(msg);
+        } 
       }
 
       function setAlarmVariables(minutes, targetTime){
