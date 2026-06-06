@@ -283,13 +283,6 @@
   </style>
 </head>
 <body>
-  <div id="debugConsole" role="log" aria-live="polite" aria-label="Debug log">
-    <div class="debug-title">
-      <span>Debug console</span>
-      <span>enabled via debug=1</span>
-    </div>
-    <div class="debug-log"></div>
-  </div>
   <div class="app">
     <div class="shell">
       <main class="card panel" role="main">
@@ -308,6 +301,13 @@
             <button class="btn" id="dismissBtn" data-action="dismiss">Dismiss</button>
           </div>
         </section>
+        <div id="debugConsole" role="log" aria-live="polite" aria-label="Debug log">
+          <div class="debug-title">
+            <span>Debug console</span>
+            <span>enabled via debug=1</span>
+          </div>
+          <div class="debug-log"></div>
+        </div>
       </main>
     </div>
   </div>
