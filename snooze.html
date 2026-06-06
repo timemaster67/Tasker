@@ -319,25 +319,8 @@
       const toast = document.getElementById('toast');
       const debugConsole = document.getElementById('debugConsole');
 
-      function getRawQueryString(){
-        if(window.location.search && window.location.search.length > 0){
-          return window.location.search;
-        }
-        const href = window.location.href || '';
-        const queryIndex = href.indexOf('?');
-        if(queryIndex >= 0){
-          const query = href.slice(queryIndex);
-          const hashIndex = query.indexOf('#');
-          return hashIndex >= 0 ? query.slice(0, hashIndex) : query;
-        }
-        if(window.location.hash && window.location.hash.startsWith('#?')){
-          return window.location.hash.slice(1);
-        }
-        return '';
-      }
-
       function getQueryParam(name){
-        const params = new URLSearchParams(getRawQueryString());
+        const params = new URLSearchParams(window.location.search);
         return params.get(name) ?? '';
       }
 
@@ -456,16 +439,20 @@
         });
       }
       function setAlarmVariables(minutes, targetTime){
+        logger.debug('Setting alarm variables:', {minutes, targetTime});
         Tasker.setGlobal('SnoozeAlarmMin', String(minutes));
         Tasker.setGlobal('SnoozeAlarmTime', targetTime);
+        logger.debug('Alarm variables set');
       }
 
       function clearAlarmVariables(){
+        logger.debug('Clearing alarm variables');
         Tasker.setGlobal('SnoozeAlarmMin', '');
         Tasker.setGlobal('SnoozeAlarmTime', '');
       }
 
       function triggerAlarmChanged(arg1, arg2){
+        logger.debug('Triggering SnoozeAlarmChanged task with args:', arg1, arg2);
         const result = Tasker.performTask('SnoozeAlarmChanged', 0, arg1, arg2);
         logger.info('performTask result:', result);
       }
@@ -487,17 +474,15 @@
           const mins = parseInt(el.getAttribute('data-time'), 10);
           const target = formatTargetTime(mins);
           const span = el.querySelector('.target-time');
-          if(span) span.textContent = target;
+          // if(span) span.textContent = target;
+          logger.debug('button clicked: report, target:', target);
           setAlarmVariables(mins, target);
           triggerAlarmChanged('report');
-          logger.debug('button clicked: report, target:', target);
         } else {
           if(action === 'snooze' || action === 'dismiss'){
+            logger.debug('button clicked: ', action);
             triggerAlarmChanged(action);
           }
-          const human = action === 'snooze' || action === 'Snooze' ? 'Snoozed' : action;
-          showToast(human.toString().replace(/^\w/, c => c.toUpperCase()));
-          logger.debug('button clicked:', action);
         }
       }
 
