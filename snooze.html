@@ -275,13 +275,6 @@
 
   <div id="toast" role="status" aria-live="polite"></div>
 
-  <!-- <div class="landscape-overlay" id="landscapeOverlay" aria-hidden="true">
-    <div class="box">
-      <h2 style="margin:0 0 8px 0;">Portrait recommandé</h2>
-      <p style="margin:0">Cette interface est optimisée pour une utilisation en orientation verticale. Merci de tourner votre appareil.</p>
-    </div>
-  </div> -->
-
   <script>
     (function(){
       const toast = document.getElementById('toast');
@@ -380,33 +373,14 @@
         others.forEach(b => b.addEventListener('click', onBtnClick, {passive:false}));
       }
 
-      // // Orientation overlay fallback for browsers that don't support media query updates
-      // function updateOverlay(){
-      //   const overlay = document.getElementById('landscapeOverlay');
-      //   const isLandscape = window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
-      //   overlay.setAttribute('aria-hidden', !isLandscape);
-      //   overlay.style.display = isLandscape ? 'flex' : 'none';
-      // }
-
-      // window.addEventListener('orientationchange', updateOverlay);
-      // window.addEventListener('resize', updateOverlay);
-
       function getQueryParam(name){
         const params = new URLSearchParams(window.location.search);
         return params.get(name) ?? '';
       }
 
-      function performTasker(task, ...args){
-        if(typeof tk !== 'undefined' && typeof tk.performTask === 'function'){
-          tk.performTask(task, 0, ...args);
-        } else if(typeof performTask === 'function'){
-          performTask(task, 0, ...args);
-        }
-      }
-
       function onStopClick(){
         doVibrate();
-        performTasker('SnoozeAlarmStopped');
+        triggerAlarmChanged('stop');
         showToast('Arrêté');
         console.log('button clicked: stop');
       }
@@ -438,7 +412,6 @@
 
       attach();
       populateTargetTimes();
-      // updateOverlay();
 
       // Accessibility: allow keyboard activation
       document.addEventListener('keydown', (e)=>{
